@@ -16,6 +16,11 @@ https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset
 # Libraries
 ```{r}
 library(tidyverse)
+library(caret)
+library(NeuralNetTools)
+library(nnet)
+
+set.seed(123)
 ```
 
 # Data
@@ -23,7 +28,7 @@ library(tidyverse)
 Stroke <- read.csv("stroke.csv")
 ```
 
-# Cleaning
+# Cleaning the Data
 
 The data is pretty clean after running this code. All variables are the correct type after running it. The only variable missing data is BMI, which only has 200/5100 observations missing. 
 
@@ -45,24 +50,32 @@ Stroke[sapply(Stroke, is.character)] <- lapply(Stroke[sapply(Stroke, is.characte
 
 
 str(Stroke)
+
+#Rename Factors for Easier Understanding
+levels(Stroke$hypertension) <- c("No", "Yes")
+levels(Stroke$heart_disease) <- c("No", "Yes")
+levels(Stroke$stroke) <- c("No", "Yes")
 ```
 ## NAs
 ```{r}
 Stroke %>% 
   select(everything()) %>% 
   summarise_all(funs(sum(is.na(.))))
-#Just 201 missing observations in bmi
+#Just 201 missing observations in bmi 
+
+#We'll just delete the NAs for now
+Stroke_clean <- na.omit(Stroke)
 ```
 
 
-# EDA
+# Exploratory Data Analysis
 
 Our target feature is stroke, where 1 indicates that a stroke occurred. For any binary attributes 1 is always the variable occurred (eg. 1 for heart disease means the patient had heart disease). 
 
 ## Dataset Overview
 ```{r}
-summary(Stroke)
-head(Stroke)
+summary(Stroke_clean)
+head(Stroke_clean)
 ```
 
 ## Variable by Stroke
@@ -70,21 +83,21 @@ head(Stroke)
 ```{r}
 #Categorical
 Cat_eda <- function(x, y) {
-  p1 <- ggplot(Stroke, aes(x={{x}})) + geom_bar(aes(fill=stroke)) + ggtitle(paste0("Stroke with Respect to ", y)) + xlab(y)         + ylab("Count")
+  p1 <- ggplot(Stroke_clean, aes(x={{x}})) + geom_bar(aes(fill=stroke) , color = "black") + ggtitle(paste0("Stroke with Respect to ", y)) + xlab(y) + ylab("Count")
 
-  p2 <- ggplot(Stroke, aes(x={{x}})) + geom_bar(aes(fill=stroke), position = "fill") + ggtitle(paste0("Stroke with Respect to ",y, " (Normalized)")) + xlab(y) + ylab("Count")
+  p2 <- ggplot(Stroke_clean, aes(x={{x}})) + geom_bar(aes(fill=stroke), position = "fill", color = "black") + ggtitle(paste0("Stroke with Respect to ",y, " (Normalized)")) + xlab(y) + ylab("Count")
   
   plot(p1)
   plot(p2)
 }
 
 #Numeric
-Num_eda <- function(x, y, z) {
-  p1 <- ggplot(Stroke, aes(x={{x}})) +        geom_histogram(aes(fill=stroke), color = "black", binwidth = z) +
+Num_eda <- function(x, y) {
+  p1 <- ggplot(Stroke_clean, aes(x={{x}})) +        geom_histogram(aes(fill=stroke), color = "black") +
     ggtitle(paste0("Stroke with Respect to ", y)) + xlab(y) + ylab("Count")
 
- p2 <- ggplot(Stroke, aes(x={{x}})) +
-   geom_histogram(aes(fill=stroke), color = "black", position =      "fill", binwidth = z) +
+ p2 <- ggplot(Stroke_clean, aes(x={{x}})) +
+   geom_histogram(aes(fill=stroke), color = "black", position =      "fill") +
    ggtitle(paste0("Stroke with Respect to ", y)) + xlab(y) +         ylab("Count")
  
  plot(p1)
@@ -113,3 +126,20 @@ Num_eda(avg_glucose_level, "Avg. Glucose Level")
 Num_eda(bmi, "BMI")
 ```
 
+# Modelling 
+## Create Folds for Cross-validation
+```{r}
+train <- createFolds(Stroke_clean$stroke, k=5)
+```
+
+## Trying out ANN just to see how it works
+```{r}
+nnet_stroke <- train(stroke ~., method = "nnet", data = Stroke_clean, tuneLength = 5, 
+                     trControl = trainControl(
+                       method = "cv", index = train),
+                trace = FALSE)     
+                     )
+
+nnet_stroke
+plotnet(nnet_stroke$finalModel)
+```
