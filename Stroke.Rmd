@@ -132,6 +132,30 @@ Num_eda(bmi, "BMI")
 train <- createFolds(Stroke_clean$stroke, k=5)
 ```
 
+# C5.0
+##
+
+
+
+# CART
+
+
+# Logistic Regression
+
+
+# Random Forest
+
+
+# Naive Bayes
+
+
+# Neural Network
+
+
+# Association Rule
+
+
+
 ## Trying out ANN just to see how it works
 ```{r}
 nnet_stroke <- train(stroke ~., method = "nnet", data = Stroke_clean, tuneLength = 5, 
