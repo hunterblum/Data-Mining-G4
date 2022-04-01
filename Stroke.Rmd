@@ -129,8 +129,10 @@ Num_eda(avg_glucose_level, "Avg. Glucose Level")
 Num_eda(bmi, "BMI")
 ```
 
+
 # Modelling 
 ## Partition Data & Create Folds for Cross-validation
+
 ```{r}
 #Partition Data
 trainIndex <- createDataPartition(y=Stroke_clean$stroke, p=0.8, list = F, times = 1)
@@ -148,21 +150,27 @@ train <- createFolds(Stroke_clean$stroke, k=5)
 
 
 # CART
+##
 
 
 # Logistic Regression
+##
 
 
 # Random Forest
+##
 
 
 # Naive Bayes
+##
 
 
 # Neural Network
+##
 
 
 # Association Rule
+##
 
 
 
