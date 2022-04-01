@@ -126,7 +126,7 @@ Num_eda(avg_glucose_level, "Avg. Glucose Level")
 Num_eda(bmi, "BMI")
 ```
 
-# Modelling 
+# Modeling 
 ## Create Folds for Cross-validation
 ```{r}
 train <- createFolds(Stroke_clean$stroke, k=5)
@@ -138,21 +138,27 @@ train <- createFolds(Stroke_clean$stroke, k=5)
 
 
 # CART
+##
 
 
 # Logistic Regression
+##
 
 
 # Random Forest
+##
 
 
 # Naive Bayes
+##
 
 
 # Neural Network
+##
 
 
 # Association Rule
+##
 
 
 
