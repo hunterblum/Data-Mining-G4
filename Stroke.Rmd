@@ -1,6 +1,6 @@
 ---
 title: "Stroke Dataset"
-author: "Hunter Blum"
+author: "Hunter Blum, Ben Earnest, Andrew Pak Kim"
 date: "3/19/2022"
 output: html_document
 ---
@@ -55,6 +55,9 @@ str(Stroke)
 levels(Stroke$hypertension) <- c("No", "Yes")
 levels(Stroke$heart_disease) <- c("No", "Yes")
 levels(Stroke$stroke) <- c("No", "Yes")
+
+#Get Rid of id
+Stroke$id <- NULL
 ```
 ## NAs
 ```{r}
@@ -127,8 +130,15 @@ Num_eda(bmi, "BMI")
 ```
 
 # Modelling 
-## Create Folds for Cross-validation
+## Partition Data & Create Folds for Cross-validation
 ```{r}
+#Partition Data
+trainIndex <- createDataPartition(y=Stroke_clean$stroke, p=0.8, list = F, times = 1)
+
+Stroke_train <- Stroke_clean[trainIndex, ]
+Stroke_test <- Stroke_clean[-trainIndex, ]
+
+#Creating folds for 5-fold cross-validation
 train <- createFolds(Stroke_clean$stroke, k=5)
 ```
 
