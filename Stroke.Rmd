@@ -19,6 +19,8 @@ library(tidyverse)
 library(caret)
 library(NeuralNetTools)
 library(nnet)
+library(smotefamily)
+library(unbalanced)
 
 set.seed(123)
 ```
@@ -69,6 +71,8 @@ Stroke %>%
 #We'll just delete the NAs for now
 Stroke_clean <- na.omit(Stroke)
 ```
+## Standardize Data?
+
 
 
 # Exploratory Data Analysis
@@ -81,14 +85,21 @@ summary(Stroke_clean)
 head(Stroke_clean)
 ```
 
+
 ## Variable by Stroke
 ### Make Functions
 ```{r}
 #Categorical
 Cat_eda <- function(x, y) {
-  p1 <- ggplot(Stroke_clean, aes(x={{x}})) + geom_bar(aes(fill=stroke) , color = "black") + ggtitle(paste0("Stroke with Respect to ", y)) + xlab(y) + ylab("Count")
+  p1 <- ggplot(Stroke_clean, aes(x={{x}})) +
+    geom_bar(aes(fill=stroke) , color = "black") +
+    ggtitle(paste0("Stroke with Respect to ", y)) +
+    xlab(y) + ylab("Count")
 
-  p2 <- ggplot(Stroke_clean, aes(x={{x}})) + geom_bar(aes(fill=stroke), position = "fill", color = "black") + ggtitle(paste0("Stroke with Respect to ",y, " (Normalized)")) + xlab(y) + ylab("Count")
+  p2 <- ggplot(Stroke_clean, aes(x={{x}})) +
+    geom_bar(aes(fill=stroke), position = "fill", color = "black")
+  + ggtitle(paste0("Stroke with Respect to ",y, " (Normalized)"))
+  + xlab(y) + ylab("Count")
   
   plot(p1)
   plot(p2)
@@ -96,12 +107,15 @@ Cat_eda <- function(x, y) {
 
 #Numeric
 Num_eda <- function(x, y) {
-  p1 <- ggplot(Stroke_clean, aes(x={{x}})) +        geom_histogram(aes(fill=stroke), color = "black") +
-    ggtitle(paste0("Stroke with Respect to ", y)) + xlab(y) + ylab("Count")
+  p1 <- ggplot(Stroke_clean, aes(x={{x}})) +
+    geom_histogram(aes(fill=stroke), color = "black") +
+    ggtitle(paste0("Stroke with Respect to ", y)) +
+    xlab(y) + ylab("Count")
 
- p2 <- ggplot(Stroke_clean, aes(x={{x}})) +
+ p2 <- ggplot(Stroke_clean, aes(x={{x}})) +  
    geom_histogram(aes(fill=stroke), color = "black", position =      "fill") +
-   ggtitle(paste0("Stroke with Respect to ", y)) + xlab(y) +         ylab("Count")
+   ggtitle(paste0("Stroke with Respect to ", y)) +
+   xlab(y) + ylab("Count")
  
  plot(p1)
  plot(p2)
@@ -120,7 +134,7 @@ Cat_eda(ever_married, "Ever Married")
 Cat_eda(work_type, "Work Type")
 Cat_eda(Residence_type, "Residence Type")
 Cat_eda(smoking_status, "Smoking Status")
-```
+``` 
 
 ### Numeric variables
 ```{r}
@@ -130,51 +144,89 @@ Num_eda(bmi, "BMI")
 ```
 
 
-# Modelling 
+# Data Preparation for modelling
+
 ## Partition Data & Create Folds for Cross-validation
 
 ```{r}
 #Partition Data
 trainIndex <- createDataPartition(y=Stroke_clean$stroke, p=0.8, list = F, times = 1)
 
-Stroke_train <- Stroke_clean[trainIndex, ]
+Stroke_tr <- Stroke_clean[trainIndex, ]
 Stroke_test <- Stroke_clean[-trainIndex, ]
 
 #Creating folds for 5-fold cross-validation
 train <- createFolds(Stroke_clean$stroke, k=5)
 ```
 
-# C5.0
-##
+## Balance Data?
+
+### Visualize Stroke Balance in Training 
+```{r}
+#Dual Axis
+ggplot(Stroke_tr, aes(x=stroke)) + 
+  geom_bar() +
+  scale_y_continuous(
+    name = "Count",
+    sec.axis = sec_axis(~./nrow(Stroke_train), name = "Proportion")
+  ) + ggtitle("Training Data")
+```
+
+### Oversampling
+```{r}
+#Get count of yes in training
+minority <- Stroke_tr %>% group_by(stroke) %>% tally() %>% filter(stroke =="Yes")
+
+#Change this to change balance to desired yes proportion
+increase_to <- 0.5
+
+#Calculate resample amouunt
+oversample_n <- (increase_to*nrow(Stroke_tr)-minority$n)/(1-increase_to)
+
+#Resample
+to_oversample <- which(Stroke_tr$stroke == "Yes")
+our_oversample <- sample(x = to_oversample, size = oversample_n, replace = T)
+our_oversample <- Stroke_tr[our_oversample, ]
+Stroke_over <- rbind(Stroke_tr, our_oversample)
+
+#Evaluate
+ggplot(Stroke_over, aes(x=stroke)) + 
+  geom_bar() +
+  scale_y_continuous(
+    name = "Count",
+    sec.axis = sec_axis(~./nrow(Stroke_over), name = "Proportion")
+  )  + ggtitle("Oversampled Data")
+```
+
+### SMOTE?
+
+# Modeling
+## C5.0 - Andrew
 
 
 
-# CART
-##
 
-
-# Logistic Regression
-##
-
-
-# Random Forest
-##
-
-
-# Naive Bayes
-##
-
-
-# Neural Network
-##
-
-
-# Association Rule
-##
+## CART - Ben
 
 
 
-## Trying out ANN just to see how it works
+## Logistic Regression - Ben
+
+
+
+## Random Forest - Hunter
+
+
+
+## Naive Bayes - Andrew
+
+
+## Association Rule - Ben
+
+
+
+
+## Neural Network - Hunter
 ```{r}
 nnet_stroke <- train(stroke ~., method = "nnet", data = Stroke_clean, tuneLength = 5, 
                      trControl = trainControl(
