@@ -18,9 +18,11 @@ https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset
 library(tidyverse)
 library(caret)
 library(NeuralNetTools)
+library(neuralnet)
 library(nnet)
 library(smotefamily)
 library(unbalanced)
+library(doParallel)
 
 set.seed(123)
 ```
@@ -28,6 +30,12 @@ set.seed(123)
 # Data
 ```{r}
 Stroke <- read.csv("stroke.csv")
+```
+
+# Multicore Support - Need to have Java Installed that is the same bit as your CPU (Probably 64)
+```{r}
+registerDoParallel()
+getDoParWorkers()
 ```
 
 # Cleaning the Data
@@ -71,7 +79,6 @@ Stroke %>%
 #We'll just delete the NAs for now
 Stroke_clean <- na.omit(Stroke)
 ```
-## Standardize Data?
 
 
 
@@ -97,9 +104,7 @@ Cat_eda <- function(x, y) {
     xlab(y) + ylab("Count")
 
   p2 <- ggplot(Stroke_clean, aes(x={{x}})) +
-    geom_bar(aes(fill=stroke), position = "fill", color = "black")
-  + ggtitle(paste0("Stroke with Respect to ",y, " (Normalized)"))
-  + xlab(y) + ylab("Count")
+    geom_bar(aes(fill=stroke), position = "fill", color = "black") + ggtitle(paste0("Stroke with Respect to ",y, " (Normalized)")) + xlab(y) + ylab("Count")
   
   plot(p1)
   plot(p2)
@@ -146,17 +151,13 @@ Num_eda(bmi, "BMI")
 
 # Data Preparation for modelling
 
-## Partition Data & Create Folds for Cross-validation
-
+## Partition Data 
 ```{r}
 #Partition Data
 trainIndex <- createDataPartition(y=Stroke_clean$stroke, p=0.8, list = F, times = 1)
 
 Stroke_tr <- Stroke_clean[trainIndex, ]
 Stroke_test <- Stroke_clean[-trainIndex, ]
-
-#Creating folds for 5-fold cross-validation
-train <- createFolds(Stroke_clean$stroke, k=5)
 ```
 
 ## Balance Data?
@@ -168,7 +169,7 @@ ggplot(Stroke_tr, aes(x=stroke)) +
   geom_bar() +
   scale_y_continuous(
     name = "Count",
-    sec.axis = sec_axis(~./nrow(Stroke_train), name = "Proportion")
+    sec.axis = sec_axis(~./nrow(Stroke_tr), name = "Proportion")
   ) + ggtitle("Training Data")
 ```
 
@@ -200,6 +201,51 @@ ggplot(Stroke_over, aes(x=stroke)) +
 
 ### SMOTE?
 
+## Standardization
+### Min-Max Standardization Function - Use standard.df() to create your own data set for model if you feel standardization is necessary.
+```{r}
+#Function to Standardize One Variable
+standard.mm <- function(x){
+  (x - min(x)) / (max(x) - min(x))
+}
+
+#Function to Standardize all Numeric Variables in Data Frame
+standard.mm.df <- function(x){
+  #Split Data
+  tr_num <- x %>% select(where(is.numeric))
+  tr_non <- x %>% select(!where(is.numeric))
+  
+  #Run Standardization Function Across Numeric
+  tr_num_mm <- apply(X = tr_num, FUN = standard.mm, MARGIN = 2)
+  
+  #Recombine
+  tr_mm <- cbind(tr_non, tr_num_mm)
+}
+
+```
+
+### Z-Score Standardization
+```{r}
+#Z-Score Function
+standard.z <- function(x){
+  (x-mean(x))/sd(x)
+}
+
+#Function to Standardize all Numeric Variables in Data Frame
+standard.z.df <- function(x){
+  #Split Data
+  tr_num <- x %>% select(where(is.numeric))
+  tr_non <- x %>% select(!where(is.numeric))
+  
+  #Run Standardization Function Across Numeric
+  tr_num_mm <- apply(X = tr_num, FUN = standard.z, MARGIN = 2)
+  
+  #Recombine
+  tr_mm <- cbind(tr_non, tr_num_mm)
+}
+
+```
+
 # Modeling
 ## C5.0 - Andrew
 
@@ -215,7 +261,13 @@ ggplot(Stroke_over, aes(x=stroke)) +
 
 
 ## Random Forest - Hunter
+```{r}
+rf_stroke <- caret::train(stroke~., method="rf", data = Stroke_tr, tuneLength = 5, trControl = trainControl(
+  method = "cv", indexOut = train
+))
 
+rf_stroke
+```
 
 
 ## Naive Bayes - Andrew
@@ -227,13 +279,81 @@ ggplot(Stroke_over, aes(x=stroke)) +
 
 
 ## Neural Network - Hunter
+
+### Fitting Models
 ```{r}
-nnet_stroke <- train(stroke ~., method = "nnet", data = Stroke_clean, tuneLength = 5, 
-                     trControl = trainControl(
-                       method = "cv", index = train),
-                trace = FALSE)     
-                     )
+#Unbalanced
+train <- createFolds(Stroke_tr$stroke, k=10)
+
+nnet_stroke <- caret::train(stroke ~ ., method = "nnet", data = Stroke_tr,
+    tuneLength = 5,
+    trControl = trainControl(
+        method = "cv", indexOut = train),
+  trace = FALSE)   
+                     
+                     
 
 nnet_stroke
 plotnet(nnet_stroke$finalModel)
+
+#Balanced
+
+train <- createFolds(Stroke_over$stroke, k=10)
+
+nnet_stroke_balanced <- caret::train(stroke ~ ., method = "nnet", data = Stroke_over,
+    tuneLength = 5,
+    trControl = trainControl(
+        method = "cv", indexOut = train),
+  trace = FALSE)   
+   
+nnet_stroke_balanced
+plotnet(nnet_stroke_balanced$finalModel)
+
+#Z-Score Standardized
+
+Stroke_tr_z_nnet <- standard.z.df(Stroke_tr)
+
+train <- createFolds(Stroke_tr_z_nnet$stroke, k=10)
+
+
+nnet_stroke_z <- caret::train(stroke ~ ., method = "nnet", data = Stroke_tr_z_nnet,
+    tuneLength = 5,
+    trControl = trainControl(
+        method = "cv", indexOut = train),
+  trace = FALSE)   
+   
+nnet_stroke_z
+plotnet(nnet_stroke_z$finalModel)
+
+#Z-score standardized and balanced
+
+Stroke_tr_z_bal <- standard.z.df(Stroke_over)
+
+train <- createFolds(Stroke_tr_z_nnet$stroke, k=10)
+
+
+nnet_stroke_z_bal <- caret::train(stroke ~ ., method = "nnet", data = Stroke_over,
+    tuneLength = 5,
+    trControl = trainControl(
+        method = "cv", indexOut = train),
+  trace = FALSE)   
+   
+nnet_stroke_z_bal
+plotnet(nnet_stroke_z_bal$finalModel)
+```
+
+### Evaluate NN
+```{r}
+confusionMatrix(data = predict(nnet_stroke, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+
+confusionMatrix(data = predict(nnet_stroke_balanced, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+
+confusionMatrix(data = predict(nnet_stroke_z, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+
+confusionMatrix(data = predict(nnet_stroke_z_bal, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+```
+
+# Model Evaluation
+```{r}
+
 ```
