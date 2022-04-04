@@ -254,6 +254,85 @@ standard.z.df <- function(x){
 
 ## CART - Ben
 
+###Install rpart and rpart.plot, run CART decision tree model:
+```{r}
+library(rpart)
+library(rpart.plot)
+cart01 <- rpart(formula = stroke ~ gender + age + hypertension + heart_disease + ever_married + work_type + Residence_type + avg_glucose_level + bmi + smoking_status, data = Stroke_over, method = "class")
+rpart.plot(cart01)
+```
+###obtain the predicted responses:
+
+```{r}
+X = data.frame(gender = Stroke_over$gender, age = Stroke_over$age, hypertension = Stroke_over$hypertension, heart_disease = Stroke_over$heart_disease, ever_married = Stroke_over$ever_married, work_type = Stroke_over$work_type, Residence_type = Stroke_over$Residence_type, avg_glucose_level = Stroke_over$avg_glucose_level, bmi = Stroke_over$bmi, smoking_status = Stroke_over$smoking_status)
+Stroke_over_pred <- predict(object = cart01, newdata = X, type = "class")
+
+```
+
+###Create Confusion matrix for the training data set "Stroke_over" actual vs predicted results:
+
+```{r}
+Stroke_over$stroke_pred <- Stroke_over_pred
+cart01_t1 <- table(Stroke_over$stroke, Stroke_over$stroke_pred)
+row.names(cart01_t1) <- c("Actual: No", "Actual: Yes")
+colnames(cart01_t1) <- c("Predicted: No", "Predicted: Yes")
+cart01_t1 <- addmargins(A = cart01_t1, FUN = list(Total = sum), quiet = TRUE)
+cart01_t1.df <- as.data.frame.matrix(cart01_t1)
+cart01_t1.df
+
+```
+###Evaluate model performance on training data:
+
+```{r}
+#calculate evaluation metrics
+precision_1 <- cart01_t1.df[2,2] / cart01_t1.df[3,2]
+Accuracy_1 <- (cart01_t1.df[1,1] +cart01_t1.df[2,2])/cart01_t1.df[3,3]
+error_rate_1 <- 1 - Accuracy_1
+sensitivity_1 <- cart01_t1.df[2,2]/cart01_t1.df[1,3]
+specificity_1 <- cart01_t1.df[1,1]/cart01_t1.df[1,3]
+f1_1 <- 2*((precision_1 * specificity_1)/(precision_1+specificity_1))
+f2_1 <- 5*((precision_1*specificity_1)/((4*precision_1)+specificity_1))
+f0.5_1 <- 1.25*((precision_1 * specificity_1)/((0.25*precision_1)*specificity_1))
+#create dataframe for evaluation metrics
+eval.df1 <- data.frame(eval.measure = c("Accuracy", "error.rate", "sensitivity", "specificity", "precision", "f1", "f2", "f0.5"))
+eval.df1$model.1 <- round(c(Accuracy_1, error_rate_1, sensitivity_1, specificity_1, precision_1, f1_1, f2_1, f0.5_1), 2)
+eval.df1
+
+```
+###Now run the test data through the model and evaluate performance.
+
+```{r}
+#store variables to pass through model in dataframe:
+X = data.frame(gender = Stroke_test$gender, age = Stroke_test$age, hypertension = Stroke_test$hypertension, heart_disease = Stroke_test$heart_disease, ever_married = Stroke_test$ever_married, work_type = Stroke_test$work_type, Residence_type = Stroke_test$Residence_type, avg_glucose_level = Stroke_test$avg_glucose_level, bmi = Stroke_test$bmi, smoking_status = Stroke_test$smoking_status)
+#run test dataset through trained model:
+Stroke_test_pred <- predict(object = cart01, newdata = X, type = "class")
+#create confustion matrix dataframe:
+Stroke_test$stroke_pred <- Stroke_test_pred
+cart01_t2 <- table(Stroke_test$stroke, Stroke_test$stroke_pred)
+row.names(cart01_t2) <- c("Actual: No", "Actual: Yes")
+colnames(cart01_t2) <- c("Predicted: No", "Predicted: Yes")
+cart01_t2 <- addmargins(A = cart01_t2, FUN = list(Total = sum), quiet = TRUE)
+cart01_t2.df <- as.data.frame.matrix(cart01_t2)
+cart01_t2.df
+```
+###Evaluate model performance on training data:
+
+```{r}
+#calculate evaluation metrics
+precision_2 <- cart01_t2.df[2,2] / cart01_t2.df[3,2]
+Accuracy_2 <- (cart01_t2.df[1,1] +cart01_t2.df[2,2])/cart01_t2.df[3,3]
+error_rate_2 <- 1 - Accuracy_1
+sensitivity_2 <- cart01_t2.df[2,2]/cart01_t2.df[1,3]
+specificity_2 <- cart01_t2.df[1,1]/cart01_t2.df[1,3]
+f1_2 <- 2*((precision_2 * specificity_2)/(precision_2+specificity_2))
+f2_2 <- 5*((precision_2*specificity_2)/((4*precision_2)+specificity_2))
+f0.5_2 <- 1.25*((precision_2 * specificity_2)/((0.25*precision_2)*specificity_2))
+#create dataframe for evaluation metrics
+eval.df2 <- data.frame(eval.measure = c("Accuracy", "error.rate", "sensitivity", "specificity", "precision", "f1", "f2", "f0.5"))
+eval.df2$model.2 <- round(c(Accuracy_2, error_rate_2, sensitivity_2, specificity_2, precision_2, f1_2, f2_2, f0.5_2), 2)
+eval.df2
+```
+
 
 
 ## Logistic Regression - Ben
