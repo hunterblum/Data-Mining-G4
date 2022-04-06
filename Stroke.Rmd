@@ -1,7 +1,7 @@
 ---
 title: "Stroke Dataset"
 author: "Hunter Blum, Ben Earnest, Andrew Pak Kim"
-date: "4/5/2022"
+date: "4/6/2022"
 output: html_document
 ---
 
@@ -371,43 +371,89 @@ rf_stroke
 # First table is the contingency table of "stroke" and "gender". The value 1 indicates "yes" while 0 indicates "no."
 ```{r}
 gen <- table(Stroke_over$stroke, Stroke_over$gender)
-colnames(gen) <- c("stroke = 1", "stroke = 0")
-rownames(gen) <- c("gender = Male", "gender = Female")
+colnames(gen) <- c("gender = Male", "gender = Female")
+rownames(gen) <- c("stroke = 1", "stroke = 0")
 addmargins(A = gen, FUN = list(Total = sum), quiet = TRUE)
 ```
 
 # Second table is the contingency table of "stroke" and "hypertension". The value 1 indicates "yes" while 0 indicates "no."
 ```{r}
 hyp <- table(Stroke_over$stroke, Stroke_over$hypertension)
-colnames(gen) <- c("stroke = 1", "stroke = 0")
-rownames(gen) <- c("hypertension = 1", "hyptertension = 0")
+colnames(hyp) <- c("hypertension = 1", "hyptertension = 0")
+rownames(hyp) <- c("stroke = 1", "stroke = 0")
 addmargins(A = hyp, FUN = list(Total = sum), quiet = TRUE)
 ```
 
 # Third table is the contingency table of "stroke" and "heart disease". The value 1 indicates "yes" while 0 indicates "no."
 ```{r}
 hd <- table(Stroke_over$stroke, Stroke_over$heart_disease)
-colnames(gen) <- c("stroke = 1", "stroke = 0")
-rownames(gen) <- c("heart_disease = 1", "heart_disease = 0")
+colnames(hd) <- c("heart_disease = 1", "heart_disease = 0")
+rownames(hd) <- c("stroke = 1", "stroke = 0")
 addmargins(A = hd, FUN = list(Total = sum), quiet = TRUE)
 ```
 
 # Fourth table is the contingency table of "stroke" and "ever married". 
 ```{r}
 Ma <- table(Stroke_over$stroke, Stroke_over$ever_married)
-colnames(gen) <- c("stroke = 1", "stroke = 0")
-rownames(gen) <- c("ever_married = Yes", "ever_married = No")
+colnames(Ma) <- c("ever_married = Yes", "ever_married = No")
+rownames(Ma) <- c("stroke = 1", "stroke = 0")
 addmargins(A = Ma, FUN = list(Total = sum), quiet = TRUE)
 ```
 
 # Fifth table is the contingency table of "stroke" and "residence type".
 ```{r}
 resd <- table(Stroke_over$stroke, Stroke_over$Residence_type)
-colnames(gen) <- c("stroke = 1", "stroke = 0")
-rownames(gen) <- c("Residence_type = Urban", "Residence_type = Rural")
+colnames(resd) <- c("Residence_type = Urban", "Residence_type = Rural")
+rownames(resd) <- c("stroke = 1", "stroke = 0")
 addmargins(A = resd, FUN = list(Total = sum), quiet = TRUE)
 ```
 
+# Sixth table is the contingency table of "stroke" and "smoking status".
+```{r}
+smoke <- table(Stroke_over$stroke, Stroke_over$smoking_status)
+colnames(smoke) <- c("smoking_status = formerly smoked", "smoking_status = never smoked", "smoking_status = smokes", "smoking_status = Unknown")
+rownames(smoke) <- c("stroke = 1", "stroke = 0")
+addmargins(A = smoke, FUN = list(Total = sum), quiet = TRUE)
+```
+
+# Seventh table is the contingency table of "stroke" and "work type".
+```{r}
+work <- table(Stroke_over$stroke, Stroke_over$work_type)
+colnames(work) <- c("work_type=children", "work_type=Govt_job", "work_type=Never_worked", "work_type=Private", "work_type=Self-employed")
+rownames(work) <- c("stroke = 1", "stroke = 0")
+addmargins(A = work, FUN = list(Total = sum), quiet = TRUE)
+```
+
+# Gridlines for each variable in association with "stroke".
+```{r}
+library(gridExtra)
+library(ggplot2)
+```
+
+# Graphs of "stroke" in association with "gender" and "hyptertension".
+```{r}
+plot1 <- ggplot(Stroke_over, aes(stroke)) + geom_bar(aes(fill=gender), position = "fill") + ylab("Proportion")
+plot2 <- ggplot(Stroke_over, aes(stroke)) + geom_bar(aes(fill = hypertension), position = "fill") + ylab("Proportion")
+grid.arrange(plot1, plot2, nrow = 1)
+```
+
+# Run the Naive Bayes estimator for "stroke" in association with "gender" and "hypertension".
+```{r}
+library(e1071)
+nb01 <- naiveBayes(formula = stroke ~ gender + hypertension, data = Stroke_over)
+```
+
+# Graphs of "stroke" in association with "heart disease" and "ever married".
+```{r}
+plot3 <- ggplot(Stroke_over, aes(stroke)) + geom_bar(aes(fill=heart_disease), position = "fill") + ylab("Proportion")
+plot4 <- ggplot(Stroke_over, aes(stroke)) + geom_bar(aes(fill=ever_married), position = "fill") + ylab("Proportion")
+grid.arrange(plot3, plot4, nrow = 1)
+```
+
+# Run the Naive Bayes estimator for "stroke" in association with "heart disease" and "ever married".
+```{r}
+nb02 <- naiveBayes(formula = stroke ~ heart_disease + ever_married, data = Stroke_over)
+```
 
 ## Association Rule - Ben
 
