@@ -259,10 +259,12 @@ plot(C5)
 
 ```
 {r}
-```
-#Obtain the classifications for each record in the data set. 
+#Create a data frame that includes the predictor variables of the records to classify.
 X = data.frame(gender = Stroke_over$gender, age = Stroke_over$age, hypertension = Stroke_over$hypertension, heart_disease = Stroke_over$heart_disease, ever_married = Stroke_over$ever_married, work_type = Stroke_over$work_type, Residence_type = Stroke_over$Residence_type, avg_glucose_level = Stroke_over$avg_glucose_level, bmi = Stroke_over$bmi, smoking_status = Stroke_over$smoking_status)
-Stroke_over_pred <- predict(object = cart01, newdata = X, type = "class")
+```
+
+```{r}
+#Obtain the classifications for each record in the data set. 
 predict(object = C5, newdata = X)
 ```
 
