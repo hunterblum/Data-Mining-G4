@@ -367,9 +367,47 @@ rf_stroke
 
 
 ## Naive Bayes - Andrew
+# Create the tables that will allow calculation of necessary probabilities 
+# First table is the contingency table of "stroke" and "gender". The value 1 indicates "yes" while 0 indicates "no."
 ```{r}
-
+gen <- table(Stroke_over$stroke, Stroke_over$gender)
+colnames(gen) <- c("stroke = 1", "stroke = 0")
+rownames(gen) <- c("gender = Male", "gender = Female")
+addmargins(A = gen, FUN = list(Total = sum), quiet = TRUE)
 ```
+
+# Second table is the contingency table of "stroke" and "hypertension". The value 1 indicates "yes" while 0 indicates "no."
+```{r}
+hyp <- table(Stroke_over$stroke, Stroke_over$hypertension)
+colnames(gen) <- c("stroke = 1", "stroke = 0")
+rownames(gen) <- c("hypertension = 1", "hyptertension = 0")
+addmargins(A = hyp, FUN = list(Total = sum), quiet = TRUE)
+```
+
+# Third table is the contingency table of "stroke" and "heart disease". The value 1 indicates "yes" while 0 indicates "no."
+```{r}
+hd <- table(Stroke_over$stroke, Stroke_over$heart_disease)
+colnames(gen) <- c("stroke = 1", "stroke = 0")
+rownames(gen) <- c("heart_disease = 1", "heart_disease = 0")
+addmargins(A = hd, FUN = list(Total = sum), quiet = TRUE)
+```
+
+# Fourth table is the contingency table of "stroke" and "ever married". 
+```{r}
+Ma <- table(Stroke_over$stroke, Stroke_over$ever_married)
+colnames(gen) <- c("stroke = 1", "stroke = 0")
+rownames(gen) <- c("ever_married = Yes", "ever_married = No")
+addmargins(A = Ma, FUN = list(Total = sum), quiet = TRUE)
+```
+
+# Fifth table is the contingency table of "stroke" and "residence type".
+```{r}
+resd <- table(Stroke_over$stroke, Stroke_over$Residence_type)
+colnames(gen) <- c("stroke = 1", "stroke = 0")
+rownames(gen) <- c("Residence_type = Urban", "Residence_type = Rural")
+addmargins(A = resd, FUN = list(Total = sum), quiet = TRUE)
+```
+
 
 ## Association Rule - Ben
 
