@@ -455,6 +455,29 @@ grid.arrange(plot3, plot4, nrow = 1)
 nb02 <- naiveBayes(formula = stroke ~ heart_disease + ever_married, data = Stroke_over)
 ```
 
+# Graph of "stroke" in association with "Residence type".
+```{r}
+plot5 <- ggplot(Stroke_over, aes(stroke)) + geom_bar(aes(fill=Residence_type), position = "fill") + ylab("Proportion")
+grid.arrange(plot5, nrow = 1)
+```
+
+# Run the Naive Bayes estimator for "stroke" in association with "Residence type".
+```{r}
+nb03 <- naiveBayes(formula = stroke ~ Residence_type, data = Stroke_over)
+```
+
+# Graph of "stroke" in association with "smoking status" and "work type".
+```{r}
+plot6 <- ggplot(Stroke_over, aes(stroke)) + geom_bar(aes(fill=smoking_status), position = "fill") + ylab("Proportion")
+plot7 <- ggplot(Stroke_over, aes(stroke)) + geom_bar(aes(fill=work_type), position = "fill") + ylab("Proportion")
+grid.arrange(plot6, plot7, nrow = 1)
+```
+
+# Run the Naive Bayes estimator for "stroke" in association with "smoking status" and "work type".
+```{r}
+nb04 <- naiveBayes(formula = stroke ~ smoking_status + work_type, data = Stroke_over)
+```
+
 ## Association Rule - Ben
 
 
