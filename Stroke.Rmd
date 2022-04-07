@@ -252,13 +252,13 @@ standard.z.df <- function(x){
 library(C50)
 C5 <- C5.0(formula = stroke ~ gender + age + hypertension + heart_disease + ever_married + work_type + Residence_type + avg_glucose_level + bmi + smoking_status, data = Stroke_over, control = C5.0Control(minCases = 75))
 ```
+
 ```{r}
 #Visualize the tree
 plot(C5)
 ```
 
-```
-{r}
+```{r}
 #Create a data frame that includes the predictor variables of the records to classify.
 X = data.frame(gender = Stroke_over$gender, age = Stroke_over$age, hypertension = Stroke_over$hypertension, heart_disease = Stroke_over$heart_disease, ever_married = Stroke_over$ever_married, work_type = Stroke_over$work_type, Residence_type = Stroke_over$Residence_type, avg_glucose_level = Stroke_over$avg_glucose_level, bmi = Stroke_over$bmi, smoking_status = Stroke_over$smoking_status)
 ```
