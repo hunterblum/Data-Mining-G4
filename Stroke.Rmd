@@ -421,6 +421,11 @@ rf_stroke <- caret::train(stroke~., method="rf", data = Stroke_tr, tuneLength = 
 rf_stroke
 ```
 
+## Linear Regression - Andrew
+```{r}
+logreg01 <- glm(formula = stroke ~ gender + age + hypertension + heart_disease + ever_married + work_type + Residence_type + avg_glucose_level + bmi + smoking_status, data = Stroke_over, family = binomial)
+summary(logreg01)
+```
 
 ## Naive Bayes - Andrew
 # Create the tables that will allow calculation of necessary probabilities 
