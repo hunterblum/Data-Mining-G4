@@ -350,10 +350,66 @@ eval.df2$model.2 <- round(c(Accuracy_2, error_rate_2, sensitivity_2, specificity
 eval.df2
 ```
 
-
-
 ## Logistic Regression - Ben
 
+```{r}
+#unbalanced
+Stroke_tr_z_lr <- standard.z.df(Stroke_tr)
+logreg_stroke <- glm(formula = stroke ~ ., data = Stroke_tr_z_lr, family = binomial)
+summary(logreg_stroke)
+#balanced
+Stroke_tr_z_bal_lr <- standard.z.df(Stroke_over)
+logreg01_stroke <- glm(formula = stroke ~ ., data = Stroke_tr_z_bal_lr, family = binomial)
+summary(logreg01_stroke)
+```
+### Remove variables with a p-value < .05:
+
+```{r}
+head(Stroke_tr_z_bal_lr)
+```
+
+```{r}
+Stroke_logreg_df <- subset(Stroke_tr_z_bal_lr, select = c("gender", "hypertension", "heart_disease", "smoking_status", "age", "avg_glucose_level", "stroke"))
+logreg_stroke_subset <- glm(formula = stroke ~ ., data = Stroke_logreg_df, family = binomial)
+summary(logreg_stroke_subset)
+```
+### Compare the logreg predictions to the training dataset target variables.  Covert the probabilites to binary outputs in a new column called 'pred' on the Stroke_logreg_df dataframe:
+
+```{r}
+# prediction
+Stroke_logreg_df$pred_prob <- predict(object = logreg_stroke_subset, newdata = Stroke_logreg_df, type='response')
+Stroke_logreg_df$pred <- (Stroke_logreg_df$pred_prob > 0.5)*1
+
+# Change pred variables to y/n
+Stroke_logreg_df$pred[Stroke_logreg_df$pred=="1"]<-"Yes"
+Stroke_logreg_df$pred[Stroke_logreg_df$pred=="0"]<-"No"
+
+# create contingency table of predicted vs. actual
+logreg_t1 <- table(Stroke_logreg_df$stroke, Stroke_logreg_df$pred)
+row.names(logreg_t1) <- c("Actual: No", "Actual: Yes")
+colnames(logreg_t1) <- c("Predicted: No", "Predicted: Yes")
+logreg_t1 <- addmargins(A = logreg_t1, FUN = list(Total = sum), quiet = TRUE)
+logreg_t1.df <- as.data.frame.matrix(logreg_t1)
+logreg_t1.df
+
+```
+### Evaluation metric for the logistic regression model
+
+```{r}
+#calculate evaluation metrics
+precision_lr <- logreg_t1.df[2,2] / logreg_t1.df[3,2]
+Accuracy_lr <- (logreg_t1.df[1,1] + logreg_t1.df[2,2])/logreg_t1.df[3,3]
+error_rate_lr <- 1 - Accuracy_lr
+sensitivity_lr <- logreg_t1.df[2,2]/logreg_t1.df[1,3]
+specificity_lr <- logreg_t1.df[1,1]/logreg_t1.df[1,3]
+f1_lr <- 2*((precision_lr * specificity_lr)/(precision_lr+specificity_lr))
+f2_lr <- 5*((precision_lr*specificity_lr)/((4*precision_lr)+specificity_lr))
+f0.5_lr <- 1.25*((precision_lr * specificity_lr)/((0.25*precision_lr)*specificity_lr))
+#create dataframe for evaluation metrics
+eval.dflr <- data.frame(eval.measure = c("Accuracy", "error.rate", "sensitivity", "specificity", "precision", "f1", "f2", "f0.5"))
+eval.dflr$model.lr <- round(c(Accuracy_2, error_rate_2, sensitivity_2, specificity_2, precision_2, f1_2, f2_2, f0.5_2), 2)
+eval.dflr
+```
 
 
 ## Random Forest - Hunter
