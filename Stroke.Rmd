@@ -651,18 +651,33 @@ plotnet(nnet_stroke_z_bal$finalModel)
 
 ### Evaluate NN
 ```{r}
-confusionMatrix(data = predict(nnet_stroke, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+nnet_reg <- confusionMatrix(data = predict(nnet_stroke, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+nnet_reg
 
-confusionMatrix(data = predict(nnet_stroke_balanced, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+nnet_bal <- confusionMatrix(data = predict(nnet_stroke_balanced, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+nnet_bal
 
-confusionMatrix(data = predict(nnet_stroke_z, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+nnet_z <- confusionMatrix(data = predict(nnet_stroke_z, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+nnet_z
 
-confusionMatrix(data = predict(nnet_stroke_z_bal, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+nnet_z_bal <- confusionMatrix(data = predict(nnet_stroke_z_bal, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+nnet_z_bal
 ```
 
 # Model Evaluation
 
-## Accuracy
+## Model Comparison Data Frame
 ```{r}
+#x is saved confusion matrix
+#Attempt at making this more streamline
+
+# Accuracy_models <- function(x) {
+#   model <- x
+#   model[["overall"]][["Accuracy"]]
+# }
+# 
+# Accuracy_models(nnet_reg)
+# Accuracy_list <- Map(c, nnet_bal, nnet_reg)
+# Accuracy <- sapply(X = Accuracy_list, FUN = Accuracy_models)
 
 ```
