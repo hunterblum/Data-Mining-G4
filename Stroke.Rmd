@@ -264,7 +264,7 @@ X = Stroke_over %>% select(!stroke)
 
 ```{r}
 #Obtain the classifications for each record in the data set. 
-predict(object = C5, newdata = X)
+y_pred <- predict(object = C5, newdata = X)
 ```
 
 
@@ -320,7 +320,7 @@ eval.df1
 
 ```{r}
 #store variables to pass through model in dataframe:
-X = data.frame(gender = Stroke_test$gender, age = Stroke_test$age, hypertension = Stroke_test$hypertension, heart_disease = Stroke_test$heart_disease, ever_married = Stroke_test$ever_married, work_type = Stroke_test$work_type, Residence_type = Stroke_test$Residence_type, avg_glucose_level = Stroke_test$avg_glucose_level, bmi = Stroke_test$bmi, smoking_status = Stroke_test$smoking_status)
+X = stroke_test %>% select(!stroke)
 #run test dataset through trained model:
 Stroke_test_pred <- predict(object = cart01, newdata = X, type = "class")
 #create confustion matrix dataframe:
@@ -413,23 +413,53 @@ eval.dflr
 
 
 ## Random Forest - Hunter
+### Create Models
 ```{r}
 rf_stroke <- caret::train(stroke~., method="rf", data = Stroke_tr, tuneLength = 5, trControl = trainControl(
   method = "cv", indexOut = train
 ))
 
 rf_stroke
+
+rf_stroke_bal <- caret::train(stroke~., method="rf", data = Stroke_over, tuneLength = 5, trControl = trainControl(
+  method = "cv", indexOut = train
+))
+
+rf_stroke_bal
 ```
+### Confusion Matrices
+```{r}
+confusionMatrix(data = predict(rf_stroke, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+
+confusionMatrix(data = predict(rf_stroke_bal, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+```
+
+
 
 ## Linear Regression - Andrew
 ```{r}
-logreg01 <- glm(formula = stroke ~ gender + age + hypertension + heart_disease + ever_married + work_type + Residence_type + avg_glucose_level + bmi + smoking_status, data = Stroke_over, family = binomial)
+logreg01 <- glm(formula = stroke ~ ., data = Stroke_over, family = binomial)
 summary(logreg01)
 ```
 
 ## Naive Bayes - Andrew
 # Create the tables that will allow calculation of necessary probabilities 
 # First table is the contingency table of "stroke" and "gender". The value 1 indicates "yes" while 0 indicates "no."
+
+# Table Function
+```{r}
+#x = data set, y = non stroke variable
+nb_table <- function(x, y) {
+  gen <- table(x[,"stroke"], x[,y])
+  colnames(gen) <- levels(x[,y])
+  rownames(gen) <- c("stroke = Yes", "stroke = No")
+  addmargins(A = gen, FUN = list(Total = sum), quiet = TRUE)
+} 
+
+#Example
+nb_table(Stroke_over, "gender")
+```
+
 ```{r}
 gen <- table(Stroke_over$stroke, Stroke_over$gender)
 colnames(gen) <- c("gender = Male", "gender = Female")
@@ -488,10 +518,21 @@ addmargins(A = work, FUN = list(Total = sum), quiet = TRUE)
 # Gridlines for each variable in association with "stroke".
 ```{r}
 library(gridExtra)
-library(ggplot2)
 ```
 
 # Graphs of "stroke" in association with "gender" and "hyptertension".
+
+# Plot Function 
+```{r}
+
+nb_plot <- function(x, y){
+  ggplot(x, aes(stroke)) + geom_bar(aes(fill=x[,y]), position = "fill") + ylab("Proportion") + labs(fill = y)
+}
+
+#Example 
+grid.arrange(nb_plot(Stroke_over, "gender"), nb_plot(Stroke_over,"hypertension"), nrow = 1)
+```
+
 ```{r}
 plot1 <- ggplot(Stroke_over, aes(stroke)) + geom_bar(aes(fill=gender), position = "fill") + ylab("Proportion")
 plot2 <- ggplot(Stroke_over, aes(stroke)) + geom_bar(aes(fill = hypertension), position = "fill") + ylab("Proportion")
@@ -620,6 +661,8 @@ confusionMatrix(data = predict(nnet_stroke_z_bal, Stroke_test), ref = Stroke_tes
 ```
 
 # Model Evaluation
+
+## Accuracy
 ```{r}
 
 ```
