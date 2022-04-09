@@ -23,6 +23,7 @@ library(nnet)
 library(smotefamily)
 library(unbalanced)
 library(doParallel)
+library(DataExplorer)
 
 set.seed(123)
 ```
@@ -148,6 +149,10 @@ Num_eda(avg_glucose_level, "Avg. Glucose Level")
 Num_eda(bmi, "BMI")
 ```
 
+### Correlation Matrix
+```{r}
+plot_correlation(Stroke)
+```
 
 # Data Preparation for modelling
 
@@ -243,6 +248,26 @@ standard.z.df <- function(x){
   tr_mm <- cbind(tr_non, tr_num_mm)
 }
 
+```
+
+### Feature Selection
+```{r}
+# Run the boruta
+library(Boruta)
+
+boruta_out <- Boruta(stroke ~ ., data = Stroke_over_z, doTrace = 2)
+
+boruta_sig <- getSelectedAttributes(boruta_out, withTentative = T)
+
+print(boruta_sig)
+
+imps <- attStats(boruta_out)
+imps2 = imps[imps$decision != 'Rejected', c('meanImp', 'decision')]
+imps2[order(-imps2$meanImp), ]
+
+plot(boruta_out, cex.axis=.7, las=2, xlab="", main="Variable Importance")  
+
+# All Variables were deemed important
 ```
 
 # Modeling
@@ -600,7 +625,7 @@ nnet_stroke <- caret::train(stroke ~ ., method = "nnet", data = Stroke_tr,
                      
                      
 
-nnet_stroke
+nnet_stroke$finalModel
 plotnet(nnet_stroke$finalModel)
 
 #Balanced
@@ -665,19 +690,17 @@ nnet_z_bal
 ```
 
 # Model Evaluation
+## Add Baseline?
 
 ## Model Comparison Data Frame
 ```{r}
-#x is saved confusion matrix
-#Attempt at making this more streamline
+Model = c("ANN Reg.", "ANN Bal.", "ANN Z", "ANN Z Bal.")
+Accuracy = c(nnet_reg$overall[1], nnet_bal$overall[1], nnet_z$overall[1], nnet_z_bal$overall[1])
 
-# Accuracy_models <- function(x) {
-#   model <- x
-#   model[["overall"]][["Accuracy"]]
-# }
-# 
-# Accuracy_models(nnet_reg)
-# Accuracy_list <- Map(c, nnet_bal, nnet_reg)
-# Accuracy <- sapply(X = Accuracy_list, FUN = Accuracy_models)
+Model_comp <- data.frame(Model, Accuracy)
+```
 
+## Accuracy Graph
+```{r}
+ggplot(Model_comp, aes(x=Model, y=Accuracy)) + geom_bar(stat = "identity")
 ```
