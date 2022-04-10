@@ -24,6 +24,7 @@ library(smotefamily)
 library(unbalanced)
 library(doParallel)
 library(DataExplorer)
+library(Boruta)
 
 set.seed(123)
 ```
@@ -165,7 +166,6 @@ Stroke_tr <- Stroke_clean[trainIndex, ]
 Stroke_test <- Stroke_clean[-trainIndex, ]
 ```
 
-## Balance Data?
 
 ### Visualize Stroke Balance in Training 
 ```{r}
@@ -204,6 +204,17 @@ ggplot(Stroke_over, aes(x=stroke)) +
   )  + ggtitle("Oversampled Data")
 ```
 
+
+### SMOTE
+```{r}
+Stroke_tr_num <- Stroke_tr %>% mutate_if(is.factor, as.numeric)
+
+
+Stroke_smote <- SMOTE(Stroke_tr_num[,-11], Stroke_tr[,11])
+Stroke_over_smote <- Stroke_smote$data
+
+
+```
 
 ## Standardization
 ### Min-Max Standardization Function - Use standard.df() to create your own data set for model if you feel standardization is necessary.
@@ -253,7 +264,7 @@ standard.z.df <- function(x){
 ### Feature Selection
 ```{r}
 # Run the boruta
-library(Boruta)
+Stroke_over_z <- standard.z.df(Stroke_over)
 
 boruta_out <- Boruta(stroke ~ ., data = Stroke_over_z, doTrace = 2)
 
