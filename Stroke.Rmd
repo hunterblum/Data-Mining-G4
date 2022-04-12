@@ -317,20 +317,40 @@ cart_bal <- confusionMatrix(data = predict(cart01, Stroke_test, type = "class"),
 cart_bal
 ```
 
-
-### CART with CARET
+### Cost Sensitive CARET
 ```{r}
-train <- createFolds(Stroke_over$stroke, k=10)
-
-CART_bal_crt <- caret::train(stroke ~ . , method = "rpart", data = Stroke_over, tuneLength = 5, 
-                       trControl = trainControl(
-                         method = "cv", indexOut = train
-                       ))
-
-rpart.plot(CART_bal_crt$finalModel)
-
-cart_bal_car <- confusionMatrix(data = predict(CART_bal_crt, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+cost <- matrix(c(
+  0, 1,
+  10, 0
+), byrow = TRUE, nrow = 2)
+cost
 ```
+### Create cost sensitive model
+```{r}
+train <- createFolds(Stroke_tr$stroke, k=10)
+
+cart_stroke <- caret::train(stroke~., method="rpart", data = Stroke_tr, tuneLength = 5, parms = list(loss = cost),trControl = trainControl(
+  method = "cv", indexOut = train
+))
+
+cart_stroke
+
+cart_stroke_bal <- caret::train(stroke~., method="rpart", data = Stroke_over, tuneLength = 5, parms = list(loss = cost),trControl = trainControl(
+  method = "cv", indexOut = train
+))
+
+cart_stroke_bal
+```
+
+### Evaluate
+```{r}
+cart_cost <- confusionMatrix(data = predict(cart_stroke, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+cart_cost
+
+cart_cost_bal <- confusionMatrix(data = predict(cart_stroke_bal, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+cart_cost_bal
+```
+
 ## Logistic Regression - Ben
 
 ```{r}
@@ -401,17 +421,32 @@ eval.dflr
 ## Random Forest - Hunter
 ### Create Models
 ```{r}
+train <- createFolds(Stroke_tr$stroke, k=10)
+
 rf_stroke <- caret::train(stroke~., method="rf", data = Stroke_tr, tuneLength = 5, trControl = trainControl(
-  method = "cv", indexOut = train
+  method = "cv", indexOut = train, classProbs = TRUE
 ))
 
 rf_stroke
+
+train <- createFolds(Stroke_over$stroke, k=10)
 
 rf_stroke_bal <- caret::train(stroke~., method="rf", data = Stroke_over, tuneLength = 5, trControl = trainControl(
   method = "cv", indexOut = train
 ))
 
 rf_stroke_bal
+
+rf_stroke_imp <- caret::train(stroke ~ age + avg_glucose_level + bmi, method="rf", data = Stroke_over, metric = "Sens", tuneLength = 5, trControl = trainControl(
+  method = "cv", indexOut = train , summaryFunction = twoClassSummary
+))
+```
+
+### Without CARET
+```{r}
+rf_stroke1 <- randomForest(stroke ~ . , data = Stroke_tr, ntree = 100 , type = "classification")
+
+rf_stroke_bal1 <- randomForest(stroke ~ bmi + avg_glucose_level + age + smoking_status + work_type, data = Stroke_over, ntree = 100 , type = "classification")
 ```
 
 ### Confusion Matrices
@@ -661,6 +696,8 @@ Baseline <- c(Accuracy_base, Sensitivity_base, Specificity_base, Precision_base,
 "NB Heart + Marry" <- c(nb_heart_marry$overall, nb_heart_marry$byClass)
 "NB Resident" <- c(nb_Res$overall, nb_Res$byClass)
 "NB Smoke + Work" <- c(nb_smoke_work$overall, nb_smoke_work$byClass)
+"CART Cost" <- c(cart_cost$overall, cart_cost$byClass)
+"CART Cost Bal." <- c(cart_cost_bal$overall, cart_cost_bal$byClass)
 
 #Get LogReg Model
 LogReg <- pivot_wider(eval.dflr, values_from = model.lr, names_from = eval.measure)
@@ -668,7 +705,7 @@ colnames(LogReg) <- str_to_title(colnames(LogReg))
 LogReg <- LogReg %>% dplyr::select(Accuracy, Sensitivity, Specificity, Precision, F1)
 
 
-Model_comp <- rbind(`ANN Reg.`, `ANN Bal.`, `ANN Z`, `ANN Z Bal.`, `RF Reg.`, `RF Bal.`, `CART Bal.`, `CART Bal. Car`, `C5.0 Bal.`, `NB Gender`, `NB Heart + Marry`, `NB Resident`, `NB Smoke + Work`)
+Model_comp <- rbind(`ANN Reg.`, `ANN Bal.`, `ANN Z`, `ANN Z Bal.`, `RF Reg.`, `RF Bal.`, `CART Bal.`, `CART Bal. Car`, `C5.0 Bal.`, `NB Gender`, `NB Heart + Marry`, `NB Resident`, `NB Smoke + Work`, `CART Cost`, `CART Cost Bal.`)
 Model_comp <- data.frame(Model_comp)
 
 Model_comp <- Model_comp %>% dplyr::select(Accuracy, Sensitivity, Specificity, Precision, F1)
