@@ -294,8 +294,9 @@ X = Stroke_over %>% select(!stroke)
 ```
 
 ```{r}
-#Obtain the classifications for each record in the data set. 
-y_pred <- predict(object = C5, newdata = X)
+#Obtain model diagnostics
+C5_bal <- confusionMatrix(data = predict(C5, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+C5_bal
 ```
 
 
@@ -317,6 +318,19 @@ cart_bal
 ```
 
 
+### CART with CARET
+```{r}
+train <- createFolds(Stroke_over$stroke, k=10)
+
+CART_bal_crt <- caret::train(stroke ~ . , method = "rpart", data = Stroke_over, tuneLength = 5, 
+                       trControl = trainControl(
+                         method = "cv", indexOut = train
+                       ))
+
+rpart.plot(CART_bal_crt$finalModel)
+
+cart_bal_car <- confusionMatrix(data = predict(CART_bal_crt, Stroke_test), ref = Stroke_test$stroke, positive = "Yes")
+```
 ## Logistic Regression - Ben
 
 ```{r}
@@ -324,6 +338,7 @@ cart_bal
 Stroke_tr_z_lr <- standard.z.df(Stroke_tr)
 logreg_stroke <- glm(formula = stroke ~ ., data = Stroke_tr_z_lr, family = binomial)
 summary(logreg_stroke)
+
 #balanced
 Stroke_tr_z_bal_lr <- standard.z.df(Stroke_over)
 logreg01_stroke <- glm(formula = stroke ~ ., data = Stroke_tr_z_bal_lr, family = binomial)
@@ -337,14 +352,9 @@ head(Stroke_tr_z_bal_lr)
 
 ```{r}
 Stroke_logreg_df <- subset(Stroke_tr_z_bal_lr, select = c("gender", "hypertension", "heart_disease", "smoking_status", "age", "avg_glucose_level", "stroke"))
+
 logreg_stroke_subset <- glm(formula = stroke ~ ., data = Stroke_logreg_df, family = binomial)
 summary(logreg_stroke_subset)
-
-# Example Mark - Ignore trying to figure out a way to streamline this prediction
-# Stroke_test_sub <- Stroke_test %>%  select(gender, hypertension, heart_disease, smoking_status, age, avg_glucose_level, stroke)
-# y_prob <- predict(logreg_stroke_subset, Stroke_test_sub, type = "response") 
-# y_pred <- rep("No", dim(Stroke_test)[1])
-# y_pred[y_prob > 0.5] = "Yes"
 ```
 ### Compare the logreg predictions to the training dataset target variables.  Covert the probabilites to binary outputs in a new column called 'pred' on the Stroke_logreg_df dataframe:
 
@@ -378,10 +388,13 @@ specificity_lr <- logreg_t1.df[1,1]/logreg_t1.df[1,3]
 f1_lr <- 2*((precision_lr * specificity_lr)/(precision_lr+specificity_lr))
 f2_lr <- 5*((precision_lr*specificity_lr)/((4*precision_lr)+specificity_lr))
 f0.5_lr <- 1.25*((precision_lr * specificity_lr)/((0.25*precision_lr)*specificity_lr))
+
+
 #create dataframe for evaluation metrics
 eval.dflr <- data.frame(eval.measure = c("Accuracy", "error.rate", "sensitivity", "specificity", "precision", "f1", "f2", "f0.5"))
-eval.dflr$model.lr <- round(c(Accuracy_2, error_rate_2, sensitivity_2, specificity_2, precision_2, f1_2, f2_2, f0.5_2), 2)
+eval.dflr$model.lr <- round(c(Accuracy_lr, error_rate_lr, sensitivity_lr, specificity_lr, precision_lr, f1_lr, f2_lr, f0.5_lr), 2)
 eval.dflr
+
 ```
 
 
@@ -411,18 +424,11 @@ rf_bal
 ```
 
 
-
-## Linear Regression - Andrew
-```{r}
-logreg01 <- glm(formula = stroke ~ ., data = Stroke_over, family = binomial)
-summary(logreg01)
-```
-
 ## Naive Bayes - Andrew
-# Create the tables that will allow calculation of necessary probabilities 
-# First table is the contingency table of "stroke" and "gender". The value 1 indicates "yes" while 0 indicates "no."
 
-# Table Function
+### Create the tables that will allow calculation of necessary probabilities 
+
+#### Table Function
 ```{r}
 #For any individual dataset
 #x = data set, y = non stroke variable
@@ -436,94 +442,105 @@ nb_table <- function(x, y) {
 
 ```
 
+
+#### First table is the contingency table of "stroke" and "gender". The value 1 indicates "yes" while 0 indicates "no."
+
+
 ```{r}
 nb_table(Stroke_over, "gender")
 ```
 
-# Second table is the contingency table of "stroke" and "hypertension". The value 1 indicates "yes" while 0 indicates "no."
+#### Second table is the contingency table of "stroke" and "hypertension". The value 1 indicates "yes" while 0 indicates "no."
 ```{r}
 nb_table(Stroke_over, "hypertension")
 ```
 
-# Third table is the contingency table of "stroke" and "heart disease". The value 1 indicates "yes" while 0 indicates "no."
+#### Third table is the contingency table of "stroke" and "heart disease". The value 1 indicates "yes" while 0 indicates "no."
 ```{r}
 nb_table(Stroke_over, "heart_disease")
 ```
 
-# Fourth table is the contingency table of "stroke" and "ever married". 
+#### Fourth table is the contingency table of "stroke" and "ever married". 
 ```{r}
 nb_table(Stroke_over, "ever_married")
 ```
 
-# Fifth table is the contingency table of "stroke" and "residence type".
+#### Fifth table is the contingency table of "stroke" and "residence type".
 ```{r}
 nb_table(Stroke_over, "Residence_type")
 ```
 
-# Sixth table is the contingency table of "stroke" and "smoking status".
+#### Sixth table is the contingency table of "stroke" and "smoking status".
 ```{r}
 nb_table(Stroke_over, "smoking_status")
 ```
 
-# Seventh table is the contingency table of "stroke" and "work type".
+#### Seventh table is the contingency table of "stroke" and "work type".
 ```{r}
 nb_table(Stroke_over, "work_type")
 ```
 
-# Gridlines for each variable in association with "stroke".
-```{r}
-```
+### Gridlines for each variable in association with "stroke".
 
-# Graphs of "stroke" in association with "gender" and "hyptertension".
-
-# Plot Function 
+#### Plot Function 
 ```{r}
 nb_plot <- function(x, y){
   ggplot(x, aes(stroke)) + geom_bar(aes(fill=x[,y]), position = "fill", color = "black") + ylab("Proportion") + labs(fill = y)
 }
 ```
 
+#### Graphs of "stroke" in association with "gender" and "hyptertension".
+
 ```{r}
 grid.arrange(nb_plot(Stroke_over, "gender"), nb_plot(Stroke_over,"hypertension"), nrow = 1)
 ```
 
-# Run the Naive Bayes estimator for "stroke" in association with "gender" and "hypertension".
+#### Run the Naive Bayes estimator for "stroke" in association with "gender" and "hypertension".
 ```{r}
 nb01 <- naiveBayes(formula = stroke ~ gender + hypertension, data = Stroke_over)
+
+nb_gender <- confusionMatrix(data = predict(nb01, Stroke_test, type = "class"), ref = Stroke_test$stroke, positive = "Yes")
+nb_gender
 ```
 
-# Graphs of "stroke" in association with "heart disease" and "ever married".
+#### Graphs of "stroke" in association with "heart disease" and "ever married".
 ```{r}
 grid.arrange(nb_plot(Stroke_over, "heart_disease"), nb_plot(Stroke_over,"ever_married"), nrow = 1)
 ```
 
-# Run the Naive Bayes estimator for "stroke" in association with "heart disease" and "ever married".
+#### Run the Naive Bayes estimator for "stroke" in association with "heart disease" and "ever married".
 ```{r}
 nb02 <- naiveBayes(formula = stroke ~ heart_disease + ever_married, data = Stroke_over)
+
+nb_heart_marry <- confusionMatrix(data = predict(nb02, Stroke_test, type = "class"), ref = Stroke_test$stroke, positive = "Yes")
+nb_heart_marry
 ```
 
-# Graph of "stroke" in association with "Residence type".
+#### Graph of "stroke" in association with "Residence type".
 ```{r}
 grid.arrange(nb_plot(Stroke_over, "Residence_type"))
 ```
 
-# Run the Naive Bayes estimator for "stroke" in association with "Residence type".
+#### Run the Naive Bayes estimator for "stroke" in association with "Residence type".
 ```{r}
 nb03 <- naiveBayes(formula = stroke ~ Residence_type, data = Stroke_over)
+
+nb_Res <- confusionMatrix(data = predict(nb03, Stroke_test, type = "class"), ref = Stroke_test$stroke, positive = "Yes")
+nb_Res
 ```
 
-# Graph of "stroke" in association with "smoking status" and "work type".
+#### Graph of "stroke" in association with "smoking status" and "work type".
 ```{r}
 grid.arrange(nb_plot(Stroke_over, "smoking_status"), nb_plot(Stroke_over, "work_type"), nrow = 1)
 ```
 
-# Run the Naive Bayes estimator for "stroke" in association with "smoking status" and "work type".
+#### Run the Naive Bayes estimator for "stroke" in association with "smoking status" and "work type".
 ```{r}
 nb04 <- naiveBayes(formula = stroke ~ smoking_status + work_type, data = Stroke_over)
+
+nb_smoke_work <- confusionMatrix(data = predict(nb04, Stroke_test, type = "class"), ref = Stroke_test$stroke, positive = "Yes")
+nb_smoke_work
 ```
-
-## Association Rule - Ben
-
 
 
 
@@ -540,7 +557,7 @@ nnet_stroke <- caret::train(stroke ~ ., method = "nnet", data = Stroke_tr,
         method = "cv", indexOut = train),
   trace = FALSE)   
                      
-                     
+nnet_stroke
 
 nnet_stroke$finalModel
 plotnet(nnet_stroke$finalModel)
@@ -608,7 +625,25 @@ nnet_z_bal
 
 
 # Model Evaluation
-## Add Baseline?
+## Add Baseline
+```{r}
+Stroke_count <- Stroke_test %>% group_by(stroke) %>% tally()
+Stroke_count
+
+TN <- as.numeric(Stroke_count[1,2])
+FN <- as.numeric(Stroke_count[2,2])
+TP <- 0
+FP <- 0
+
+Accuracy_base <- TN/(TN+FN)
+Sensitivity_base <- TP/(TP+FN)
+Specificity_base<- TN/(TN+FP)
+Precision_base <- TP/(TP+FP)
+F1_base <- 2*(Precision*Sensitivity)/(Precision + Sensitivity)
+
+Baseline <- c(Accuracy_base, Sensitivity_base, Specificity_base, Precision_base, F1_base)
+```
+
 
 ## Model Comparison Data Frame
 ```{r}
@@ -619,48 +654,66 @@ nnet_z_bal
 "ANN Z Bal." <- c(nnet_z_bal$overall, nnet_z_bal$byClass)
 "RF Reg." <- c(rf_reg$overall, rf_reg$byClass)
 "RF Bal." <- c(rf_bal$overall, rf_bal$byClass)
+"CART Bal." <- c(cart_bal$overall, cart_bal$byClass)
+"CART Bal. Car" <- c(cart_bal_car$overall, cart_bal_car$byClass)
+"C5.0 Bal." <- c(C5_bal$overall, C5_bal$byClass)
+"NB Gender" <- c(nb_gender$overall, nb_gender$byClass)
+"NB Heart + Marry" <- c(nb_heart_marry$overall, nb_heart_marry$byClass)
+"NB Resident" <- c(nb_Res$overall, nb_Res$byClass)
+"NB Smoke + Work" <- c(nb_smoke_work$overall, nb_smoke_work$byClass)
 
-Model_comp <- rbind(`ANN Reg.`, `ANN Bal.`, `ANN Z`, `ANN Z Bal.`, `RF Reg.`, `RF Bal.`)
+#Get LogReg Model
+LogReg <- pivot_wider(eval.dflr, values_from = model.lr, names_from = eval.measure)
+colnames(LogReg) <- str_to_title(colnames(LogReg))
+LogReg <- LogReg %>% dplyr::select(Accuracy, Sensitivity, Specificity, Precision, F1)
+
+
+Model_comp <- rbind(`ANN Reg.`, `ANN Bal.`, `ANN Z`, `ANN Z Bal.`, `RF Reg.`, `RF Bal.`, `CART Bal.`, `CART Bal. Car`, `C5.0 Bal.`, `NB Gender`, `NB Heart + Marry`, `NB Resident`, `NB Smoke + Work`)
 Model_comp <- data.frame(Model_comp)
+
+Model_comp <- Model_comp %>% dplyr::select(Accuracy, Sensitivity, Specificity, Precision, F1)
+
+Model_comp <- rbind(Baseline, LogReg, Model_comp)
+
+rownames(Model_comp)[rownames(Model_comp) == 1] <- "Baseline"
+rownames(Model_comp)[rownames(Model_comp) == 2] <- "Log Reg."
+
 Model_comp <- cbind(Model = rownames(Model_comp), Model_comp)
 rownames(Model_comp) <- 1:nrow(Model_comp)
+
 Model_comp$Model <- as.factor(Model_comp$Model)
+Model_comp[is.na(Model_comp)] <- 0
 ```
 
 ## Accuracy Graph
 ```{r}
-Model_comp %>% mutate(Model = fct_reorder(Model, desc(Accuracy))) %>%  ggplot(aes(x=Model, y=Accuracy)) + geom_bar(stat = "identity", fill = "darkgreen") + coord_flip()
+Model_comp %>% mutate(Model = fct_reorder(Model, desc(Accuracy))) %>% mutate(Performance = ifelse(Model_comp$Accuracy == Accuracy_base, "Baseline", ifelse(Model_comp$Accuracy < Accuracy_base, "Worse", "Green"))) %>% ggplot(aes(x=Model, y=Accuracy, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("grey", "#c12503"))
 ```
+
 ## Sensitivity
 ```{r}
-Model_comp %>% mutate(Model = fct_reorder(Model, desc(Sensitivity))) %>%  ggplot(aes(x=Model, y=Sensitivity)) + geom_bar(stat = "identity", fill = "darkgreen") + coord_flip()
+Model_comp %>% mutate(Model = fct_reorder(Model, desc(Sensitivity))) %>% mutate(Performance = ifelse(Model_comp$Sensitivity == Sensitivity_base, "Baseline", ifelse(Model_comp$Sensitivity < Sensitivity_base, "Worse", "Better"))) %>% 
+  ggplot(aes(x=Model, y=Sensitivity, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("Grey", "darkgreen"))
 ```
 
 ## Specificity 
 ```{r}
-Model_comp %>% mutate(Model = fct_reorder(Model, desc(Specificity))) %>%  ggplot(aes(x=Model, y=Specificity)) + geom_bar(stat = "identity", fill = "darkgreen") + coord_flip()
+Model_comp %>% mutate(Model = fct_reorder(Model, desc(Specificity))) %>% mutate(Performance = ifelse(Model_comp$Specificity == Specificity_base, "Baseline", ifelse(Model_comp$Specificity < Specificity_base, "Worse", "Better"))) %>% 
+  ggplot(aes(x=Model, y=Specificity, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("Grey", "#c12503"))
 ```
 
 ## Precision
 ```{r}
-Model_comp %>% mutate(Model = fct_reorder(Model, desc(Precision))) %>%  ggplot(aes(x=Model, y=Precision)) + geom_bar(stat = "identity", fill = "darkgreen") + coord_flip()
-```
-
-## Recall 
-```{r}
-Model_comp %>% mutate(Model = fct_reorder(Model, desc(Recall))) %>%  ggplot(aes(x=Model, y=Recall)) + geom_bar(stat = "identity", fill = "darkgreen") + coord_flip()
+Model_comp %>% mutate(Model = fct_reorder(Model, desc(Precision))) %>% mutate(Performance = ifelse(Model_comp$Precision == 0, "Baseline", ifelse(Model_comp$Precision < 0, "Worse", "Better"))) %>% ggplot(aes(x=Model, y=Precision, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("Grey", "darkgreen"))
 ```
 
 ## F1
 ```{r}
-Model_comp %>% mutate(Model = fct_reorder(Model, desc(F1))) %>%  ggplot(aes(x=Model, y=F1)) + geom_bar(stat = "identity", fill = "darkgreen") + coord_flip()
+Model_comp %>% mutate(Model = fct_reorder(Model, desc(Specificity))) %>% mutate(Performance = ifelse(Model_comp$Specificity == Specificity_base, "Baseline", ifelse(Model_comp$Specificity < Specificity_base, "Worse", "Better"))) %>% 
+  ggplot(aes(x=Model, y=Specificity, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("Grey", "#c12503"))
 ```
 
 ## Comparison Table
 ```{r}
-Model_comp_tb <- Model_comp %>% select(Model, Accuracy, Sensitivity, Specificity, Precision, Recall, F1)
-Model_comp_tb[is.na(Model_comp_tb)] <- 0
-
-Model_comp_tb <- kbl(Model_comp_tb) 
-Model_comp_tb
+kable(Model_comp, table.attr = "style = \"color: black;\"") %>% kable_material(c("striped", "hover")) %>% column_spec(1, bold = T, border_right = T)
 ```
