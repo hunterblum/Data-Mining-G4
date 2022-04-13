@@ -15,7 +15,6 @@ https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset
 
 # Libraries
 ```{r}
-library(tidyverse)
 library(caret)
 library(NeuralNetTools)
 library(nnet)
@@ -27,7 +26,7 @@ library(rpart.plot)
 library(gridExtra)
 library(e1071)
 library(kableExtra)
-
+library(tidyverse)
 
 
 set.seed(123)
@@ -446,8 +445,7 @@ rf_stroke_imp <- caret::train(stroke ~ age + avg_glucose_level + bmi, method="rf
 ```{r}
 library(randomForest)
 library(gridExtra)
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
 rf_stroke1 <- randomForest(stroke ~ . , data = Stroke_tr, ntree = 100 , type = "classification")
 
 rf_stroke_bal1 <- randomForest(stroke ~ bmi + avg_glucose_level + age + smoking_status + work_type, data = Stroke_over, ntree = 100 , type = "classification")
