@@ -15,6 +15,7 @@ https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset
 
 # Libraries
 ```{r}
+library(randomForest)
 library(caret)
 library(NeuralNetTools)
 library(nnet)
@@ -316,7 +317,8 @@ cart_bal <- confusionMatrix(data = predict(cart01, Stroke_test, type = "class"),
 cart_bal
 ```
 
-### Cost Sensitive CARET
+### Cost Sensitive CARET - 
+Probably only useful if we want to hyperfocus on sensitivity, but loses a lot of specificity.
 ```{r}
 cost <- matrix(c(
   0, 1,
@@ -435,21 +437,9 @@ rf_stroke_bal <- caret::train(stroke~., method="rf", data = Stroke_over, tuneLen
 ))
 
 rf_stroke_bal
-
-rf_stroke_imp <- caret::train(stroke ~ age + avg_glucose_level + bmi, method="rf", data = Stroke_over, metric = "Sens", tuneLength = 5, trControl = trainControl(
-  method = "cv", indexOut = train , summaryFunction = twoClassSummary
-))
 ```
 
-### Without CARET
-```{r}
-library(randomForest)
-library(gridExtra)
-library(tidyverse)
-rf_stroke1 <- randomForest(stroke ~ . , data = Stroke_tr, ntree = 100 , type = "classification")
 
-rf_stroke_bal1 <- randomForest(stroke ~ bmi + avg_glucose_level + age + smoking_status + work_type, data = Stroke_over, ntree = 100 , type = "classification")
-```
 
 ### Confusion Matrices
 ```{r}
@@ -676,7 +666,7 @@ Accuracy_base <- TN/(TN+FN)
 Sensitivity_base <- TP/(TP+FN)
 Specificity_base<- TN/(TN+FP)
 Precision_base <- TP/(TP+FP)
-F1_base <- 2*(Precision*Sensitivity)/(Precision + Sensitivity)
+F1_base <- 0
 
 Baseline <- c(Accuracy_base, Sensitivity_base, Specificity_base, Precision_base, F1_base)
 ```
@@ -692,7 +682,6 @@ Baseline <- c(Accuracy_base, Sensitivity_base, Specificity_base, Precision_base,
 "RF Reg." <- c(rf_reg$overall, rf_reg$byClass)
 "RF Bal." <- c(rf_bal$overall, rf_bal$byClass)
 "CART Bal." <- c(cart_bal$overall, cart_bal$byClass)
-"CART Bal. Car" <- c(cart_bal_car$overall, cart_bal_car$byClass)
 "C5.0 Bal." <- c(C5_bal$overall, C5_bal$byClass)
 "NB Gender" <- c(nb_gender$overall, nb_gender$byClass)
 "NB Heart + Marry" <- c(nb_heart_marry$overall, nb_heart_marry$byClass)
@@ -707,7 +696,7 @@ colnames(LogReg) <- str_to_title(colnames(LogReg))
 LogReg <- LogReg %>% dplyr::select(Accuracy, Sensitivity, Specificity, Precision, F1)
 
 
-Model_comp <- rbind(`ANN Reg.`, `ANN Bal.`, `ANN Z`, `ANN Z Bal.`, `RF Reg.`, `RF Bal.`, `CART Bal.`, `CART Bal. Car`, `C5.0 Bal.`, `NB Gender`, `NB Heart + Marry`, `NB Resident`, `NB Smoke + Work`, `CART Cost`, `CART Cost Bal.`)
+Model_comp <- rbind(`ANN Reg.`, `ANN Bal.`, `ANN Z`, `ANN Z Bal.`, `RF Reg.`, `RF Bal.`, `CART Bal.`, `CART Cost`, `CART Cost Bal.`, `C5.0 Bal.`, `NB Gender`, `NB Heart + Marry`, `NB Resident`, `NB Smoke + Work`)
 Model_comp <- data.frame(Model_comp)
 
 Model_comp <- Model_comp %>% dplyr::select(Accuracy, Sensitivity, Specificity, Precision, F1)
@@ -726,7 +715,7 @@ Model_comp[is.na(Model_comp)] <- 0
 
 ## Accuracy Graph
 ```{r}
-Model_comp %>% mutate(Model = fct_reorder(Model, desc(Accuracy))) %>% mutate(Performance = ifelse(Model_comp$Accuracy == Accuracy_base, "Baseline", ifelse(Model_comp$Accuracy < Accuracy_base, "Worse", "Green"))) %>% ggplot(aes(x=Model, y=Accuracy, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("grey", "#c12503"))
+Model_comp %>% mutate(Model = fct_reorder(Model, desc(Accuracy))) %>% mutate(Performance = ifelse(Model_comp$Accuracy == Accuracy_base, "Baseline", ifelse(Model_comp$Accuracy < Accuracy_base, "Worse", "Better"))) %>% ggplot(aes(x=Model, y=Accuracy, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("grey", "darkgreen", "#c12503"))
 ```
 
 ## Sensitivity
@@ -748,8 +737,8 @@ Model_comp %>% mutate(Model = fct_reorder(Model, desc(Precision))) %>% mutate(Pe
 
 ## F1
 ```{r}
-Model_comp %>% mutate(Model = fct_reorder(Model, desc(Specificity))) %>% mutate(Performance = ifelse(Model_comp$Specificity == Specificity_base, "Baseline", ifelse(Model_comp$Specificity < Specificity_base, "Worse", "Better"))) %>% 
-  ggplot(aes(x=Model, y=Specificity, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("Grey", "#c12503"))
+Model_comp %>% mutate(Model = fct_reorder(Model, desc(F1))) %>% mutate(Performance = ifelse(Model_comp$F1 == F1_base, "Baseline", ifelse(Model_comp$F1 < F1_base, "Worse", "Better"))) %>% 
+  ggplot(aes(x=Model, y=F1, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("Grey", "darkgreen"))
 ```
 
 ## Comparison Table
