@@ -15,7 +15,7 @@ https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset
 
 # Libraries
 ```{r}
-library(tidyverse)
+library(randomForest)
 library(caret)
 library(NeuralNetTools)
 library(nnet)
@@ -27,7 +27,7 @@ library(rpart.plot)
 library(gridExtra)
 library(e1071)
 library(kableExtra)
-
+library(tidyverse)
 
 
 set.seed(123)
@@ -438,6 +438,7 @@ rf_stroke_bal <- caret::train(stroke~., method="rf", data = Stroke_over, tuneLen
 
 rf_stroke_bal
 ```
+
 
 
 ### Confusion Matrices
