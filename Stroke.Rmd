@@ -371,54 +371,34 @@ summary(logreg01_stroke)
 ```{r}
 head(Stroke_tr_z_bal_lr)
 ```
-
+### Retrain model
 ```{r}
 Stroke_logreg_df <- subset(Stroke_tr_z_bal_lr, select = c("gender", "hypertension", "heart_disease", "smoking_status", "age", "avg_glucose_level", "stroke"))
 
 logreg_stroke_subset <- glm(formula = stroke ~ ., data = Stroke_logreg_df, family = binomial)
 summary(logreg_stroke_subset)
 ```
-### Compare the logreg predictions to the training dataset target variables.  Covert the probabilites to binary outputs in a new column called 'pred' on the Stroke_logreg_df dataframe:
-
+### Compare the logreg predictions to the test dataset target variables. 
 ```{r}
+#Create Test Subset
+Stroke_logreg_test <- Stroke_test %>% select(gender, hypertension, heart_disease, smoking_status, age, avg_glucose_level, stroke)
 # prediction
-Stroke_logreg_df$pred_prob <- predict(object = logreg_stroke_subset, newdata = Stroke_logreg_df, type='response')
-Stroke_logreg_df$pred <- (Stroke_logreg_df$pred_prob > 0.5)*1
+Stroke_logreg_test$pred_prob <- predict(object = logreg_stroke_subset, newdata = Stroke_logreg_test, type='response')
+Stroke_logreg_test$pred <- (Stroke_logreg_test$pred_prob > 0.5)*1
 
 # Change pred variables to y/n
-Stroke_logreg_df$pred[Stroke_logreg_df$pred=="1"]<-"Yes"
-Stroke_logreg_df$pred[Stroke_logreg_df$pred=="0"]<-"No"
+Stroke_logreg_test$pred[Stroke_logreg_test$pred=="1"]<-"Yes"
+Stroke_logreg_test$pred[Stroke_logreg_test$pred=="0"]<-"No"
+Stroke_logreg_test$pred <- as.factor(Stroke_logreg_test$pred)
 
-# create contingency table of predicted vs. actual
-logreg_t1 <- table(Stroke_logreg_df$stroke, Stroke_logreg_df$pred)
-row.names(logreg_t1) <- c("Actual: No", "Actual: Yes")
-colnames(logreg_t1) <- c("Predicted: No", "Predicted: Yes")
-logreg_t1 <- addmargins(A = logreg_t1, FUN = list(Total = sum), quiet = TRUE)
-logreg_t1.df <- as.data.frame.matrix(logreg_t1)
-logreg_t1.df
 
 ```
-### Evaluation metric for the logistic regression model
 
+### Confusion Matrix and Metrics
 ```{r}
-#calculate evaluation metrics
-precision_lr <- logreg_t1.df[2,2] / logreg_t1.df[3,2]
-Accuracy_lr <- (logreg_t1.df[1,1] + logreg_t1.df[2,2])/logreg_t1.df[3,3]
-error_rate_lr <- 1 - Accuracy_lr
-sensitivity_lr <- logreg_t1.df[2,2]/logreg_t1.df[1,3]
-specificity_lr <- logreg_t1.df[1,1]/logreg_t1.df[1,3]
-f1_lr <- 2*((precision_lr * specificity_lr)/(precision_lr+specificity_lr))
-f2_lr <- 5*((precision_lr*specificity_lr)/((4*precision_lr)+specificity_lr))
-f0.5_lr <- 1.25*((precision_lr * specificity_lr)/((0.25*precision_lr)*specificity_lr))
-
-
-#create dataframe for evaluation metrics
-eval.dflr <- data.frame(eval.measure = c("Accuracy", "error.rate", "sensitivity", "specificity", "precision", "f1", "f2", "f0.5"))
-eval.dflr$model.lr <- round(c(Accuracy_lr, error_rate_lr, sensitivity_lr, specificity_lr, precision_lr, f1_lr, f2_lr, f0.5_lr), 2)
-eval.dflr
-
+LogReg <- confusionMatrix(data = Stroke_logreg_test$pred, ref = Stroke_logreg_test$stroke, positive = "Yes")
+LogReg
 ```
-
 
 ## Random Forest - Hunter
 ### Create Models
@@ -692,22 +672,18 @@ Baseline <- c(Accuracy_base, Sensitivity_base, Specificity_base, Precision_base,
 "NB Smoke + Work" <- c(nb_smoke_work$overall, nb_smoke_work$byClass)
 "CART Cost" <- c(cart_cost$overall, cart_cost$byClass)
 "CART Cost Bal." <- c(cart_cost_bal$overall, cart_cost_bal$byClass)
-
-#Get LogReg Model
-LogReg <- pivot_wider(eval.dflr, values_from = model.lr, names_from = eval.measure)
-colnames(LogReg) <- str_to_title(colnames(LogReg))
-LogReg <- LogReg %>% dplyr::select(Accuracy, Sensitivity, Specificity, Precision, F1)
+"Log Reg." <- c(LogReg$overall, LogReg$byClass)
 
 
-Model_comp <- rbind(`ANN Reg.`, `ANN Bal.`, `ANN Z`, `ANN Z Bal.`, `RF Reg.`, `RF Bal.`, `CART Bal.`, `CART Cost`, `CART Cost Bal.`, `C5.0 Bal.`, `NB Gender`, `NB Heart + Marry`, `NB Resident`, `NB Smoke + Work`)
+Model_comp <- rbind(`ANN Reg.`, `ANN Bal.`, `ANN Z`, `ANN Z Bal.`, `RF Reg.`, `RF Bal.`, `CART Bal.`, `CART Cost`, `CART Cost Bal.`, `C5.0 Bal.`, `NB Gender`, `NB Heart + Marry`, `NB Resident`, `NB Smoke + Work`, `Log Reg.`)
+
 Model_comp <- data.frame(Model_comp)
 
 Model_comp <- Model_comp %>% dplyr::select(Accuracy, Sensitivity, Specificity, Precision, F1)
 
-Model_comp <- rbind(Baseline, LogReg, Model_comp)
+Model_comp <- rbind(Baseline , Model_comp)
 
 rownames(Model_comp)[rownames(Model_comp) == 1] <- "Baseline"
-rownames(Model_comp)[rownames(Model_comp) == 2] <- "Log Reg."
 
 Model_comp <- cbind(Model = rownames(Model_comp), Model_comp)
 rownames(Model_comp) <- 1:nrow(Model_comp)
@@ -718,7 +694,7 @@ Model_comp[is.na(Model_comp)] <- 0
 
 ## Accuracy Graph
 ```{r}
-Model_comp %>% mutate(Model = fct_reorder(Model, desc(Accuracy))) %>% mutate(Performance = ifelse(Model_comp$Accuracy == Accuracy_base, "Baseline", ifelse(Model_comp$Accuracy < Accuracy_base, "Worse", "Better"))) %>% ggplot(aes(x=Model, y=Accuracy, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("grey", "darkgreen", "#c12503"))
+Model_comp %>% mutate(Model = fct_reorder(Model, desc(Accuracy))) %>% mutate(Performance = ifelse(Model_comp$Accuracy == Accuracy_base, "Baseline", ifelse(Model_comp$Accuracy < Accuracy_base, "Worse", "Better"))) %>% ggplot(aes(x=Model, y=Accuracy, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("grey", "#c12503", "darkgreen"))
 ```
 
 ## Sensitivity
