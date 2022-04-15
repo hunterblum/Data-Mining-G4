@@ -1,2 +1,8 @@
 #Ignore .Rhistory files
 *.Rhistory
+
+
+#Ignore image outputs
+*.png
+*.jpg
+*.jpeg
