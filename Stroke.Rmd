@@ -271,7 +271,8 @@ imps <- attStats(boruta_out)
 imps2 = imps[imps$decision != 'Rejected', c('meanImp', 'decision')]
 imps2[order(-imps2$meanImp), ]
 
-plot(boruta_out, cex.axis=.7, las=2, xlab="", main="Variable Importance")  
+plot(boruta_out, cex.axis=.55, las=2, xlab="", main="Variable Importance")  
+
 
 # All Variables were deemed important
 ```
@@ -430,13 +431,15 @@ rf_stroke <- caret::train(stroke~., method="rf", data = Stroke_tr, tuneLength = 
 
 rf_stroke
 
-train <- createFolds(Stroke_over$stroke, k=10)
+train <- createFolds(Stroke_over_z$stroke, k=10)
 
-rf_stroke_bal <- caret::train(stroke~., method="rf", data = Stroke_over, tuneLength = 5, trControl = trainControl(
+rf_stroke_bal <- caret::train(stroke~., method="rf", data = Stroke_over_z, tuneLength = 5,  trControl = trainControl(
   method = "cv", indexOut = train
 ))
 
+
 rf_stroke_bal
+rf_stroke_bal$finalModel
 ```
 
 
