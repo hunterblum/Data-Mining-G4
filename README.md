@@ -8,7 +8,9 @@ Objective: The main purpose of this project is to develop a classification machi
 
 Partners:
 Andrew Kim
+
 Benjamin Earnest
+
 Hunter Blum
 
 Methods Used:
