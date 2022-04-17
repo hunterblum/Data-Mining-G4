@@ -1,5 +1,6 @@
 # Stroke Prediction Using Data Mining
 [README.txt](https://github.com/ApkimCA/Data-Mining-G4/files/8502545/README.txt)
+
 This project is part of the ADS-502 course in the Applied Data Science Program at the University of San Diego
 Project Title: Stroke Risk Prediction
 
