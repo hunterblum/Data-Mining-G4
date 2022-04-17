@@ -35,7 +35,8 @@ Attribute information:
 6) ever_married: "No" or "Yes"
 7) work_type: "children", "Govt_jov", "Never_worked", "Private" or "Self-employed"
 8) Residence_type: "Rural" or "Urban"
-9) avg_glucose_level: average glucose level in blood
+9) avg_glucose_level: average glucose level in blood[README.txt](https://github.com/ApkimCA/Data-Mining-G4/files/8502545/README.txt)
+
 10) bmi: body mass index
 11) smoking_status: "formerly smoked", "never smoked", "smokes" or "Unknown"*
 12) stroke: 1 if the patient had a stroke or 0 if not
