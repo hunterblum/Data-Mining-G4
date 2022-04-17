@@ -1,8 +1,10 @@
 ---
-title: "Stroke Dataset"
+title: "A Stroking Analysis of Strokes"
 author: "Hunter Blum, Ben Earnest, Andrew Pak Kim"
 date: "4/12/2022"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -125,7 +127,7 @@ Num_eda <- function(x, y) {
 
  p2 <- ggplot(Stroke_clean, aes(x={{x}})) +  
    geom_histogram(aes(fill=stroke), color = "black", position =      "fill") +
-   ggtitle(paste0("Stroke with Respect to ", y)) +
+   ggtitle(paste0("Stroke with Respect to ", y, " (Normalized)")) +
    xlab(y) + ylab("Count")
  
  plot(p1)
@@ -175,11 +177,11 @@ Stroke_test <- Stroke_clean[-trainIndex, ]
 ```{r}
 #Dual Axis
 ggplot(Stroke_tr, aes(x=stroke)) + 
-  geom_bar() +
+  geom_bar(fill = "#eb746c") +
   scale_y_continuous(
     name = "Count",
     sec.axis = sec_axis(~./nrow(Stroke_tr), name = "Proportion")
-  ) + ggtitle("Training Data")
+  ) + ggtitle("Training Data Pre-balancing")
 ```
 
 ### Oversampling
@@ -201,7 +203,7 @@ Stroke_over <- rbind(Stroke_tr, our_oversample)
 
 #Evaluate
 ggplot(Stroke_over, aes(x=stroke)) + 
-  geom_bar() +
+  geom_bar(fill = "#72cf69") +
   scale_y_continuous(
     name = "Count",
     sec.axis = sec_axis(~./nrow(Stroke_over), name = "Proportion")
@@ -570,7 +572,7 @@ nnet_stroke <- caret::train(stroke ~ ., method = "nnet", data = Stroke_tr,
 nnet_stroke
 
 nnet_stroke$finalModel
-plotnet(nnet_stroke$finalModel)
+plotnet(nnet_stroke$finalModel, pad_x = 0.25)
 
 #Balanced
 
@@ -583,7 +585,7 @@ nnet_stroke_balanced <- caret::train(stroke ~ ., method = "nnet", data = Stroke_
   trace = FALSE)   
    
 nnet_stroke_balanced
-plotnet(nnet_stroke_balanced$finalModel)
+plotnet(nnet_stroke_balanced$finalModel, pad_x = 0.25, circle_col = c("#F784FF", "#F784FF"))
 
 #Z-Score Standardized
 
@@ -599,7 +601,7 @@ nnet_stroke_z <- caret::train(stroke ~ ., method = "nnet", data = Stroke_tr_z_nn
   trace = FALSE)   
    
 nnet_stroke_z
-plotnet(nnet_stroke_z$finalModel)
+plotnet(nnet_stroke_z$finalModel, pad_x = 0.25, circle_col = c("#FF9984", "#FF9984"))
 
 #Z-score standardized and balanced
 
@@ -615,8 +617,7 @@ nnet_stroke_z_bal <- caret::train(stroke ~ ., method = "nnet", data = Stroke_ove
   trace = FALSE)   
    
 nnet_stroke_z_bal
-plotnet(nnet_stroke_z_bal$finalModel)
-```
+plotnet(nnet_stroke_z_bal$finalModel, pad_x = 0.25, circle_col= c("#90F88D", "#90F88D"))
 
 ### Evaluate NN
 ```{r}
@@ -694,15 +695,20 @@ Model_comp[is.na(Model_comp)] <- 0
 
 ## Accuracy Graph
 ```{r}
-Model_comp %>% mutate(Model = fct_reorder(Model, desc(Accuracy))) %>% mutate(Performance = ifelse(Model_comp$Accuracy == Accuracy_base, "Baseline", ifelse(Model_comp$Accuracy < Accuracy_base, "Worse", "Better"))) %>% ggplot(aes(x=Model, y=Accuracy, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("grey", "#c12503", "darkgreen"))
+Plot_acc <- Model_comp %>% mutate(Model = fct_reorder(Model, desc(Accuracy))) %>% mutate(Performance = ifelse(Model_comp$Accuracy == Accuracy_base, "Baseline", ifelse(Model_comp$Accuracy < Accuracy_base, "Worse", "Better"))) %>% ggplot(aes(x=Model, y=Accuracy, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("grey", "#c12503", "darkgreen"))
+plot(Plot_acc)
 ```
 
 ## Sensitivity
 ```{r}
-Model_comp %>% mutate(Model = fct_reorder(Model, desc(Sensitivity))) %>% mutate(Performance = ifelse(Model_comp$Sensitivity == Sensitivity_base, "Baseline", ifelse(Model_comp$Sensitivity < Sensitivity_base, "Worse", "Better"))) %>% 
+Plot_sens <- Model_comp %>% mutate(Model = fct_reorder(Model, desc(Sensitivity))) %>% mutate(Performance = ifelse(Model_comp$Sensitivity == Sensitivity_base, "Baseline", ifelse(Model_comp$Sensitivity < Sensitivity_base, "Worse", "Better"))) %>% 
   ggplot(aes(x=Model, y=Sensitivity, fill = Performance)) + geom_bar(stat = "identity") + coord_flip() + scale_fill_manual(values = c("Grey", "darkgreen"))
+plot(Plot_sens)
 ```
-
+## Side by side for paper
+```{r}
+grid.arrange(Plot_acc, Plot_sens, ncol = 2)
+```
 ## Specificity 
 ```{r}
 Model_comp %>% mutate(Model = fct_reorder(Model, desc(Specificity))) %>% mutate(Performance = ifelse(Model_comp$Specificity == Specificity_base, "Baseline", ifelse(Model_comp$Specificity < Specificity_base, "Worse", "Better"))) %>% 
@@ -722,5 +728,5 @@ Model_comp %>% mutate(Model = fct_reorder(Model, desc(F1))) %>% mutate(Performan
 
 ## Comparison Table
 ```{r}
-kable(Model_comp, table.attr = "style = \"color: black;\"") %>% kable_material(c("striped", "hover")) %>% column_spec(1, bold = T, border_right = T)
+Model_comp
 ```
