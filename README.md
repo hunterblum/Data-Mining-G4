@@ -1,12 +1,18 @@
 # Stroke Prediction Using Data Mining
-[README.txt](https://github.com/ApkimCA/Data-Mining-G4/files/8502545/README.txt)
 
 This project is part of the ADS-502 Applied Data Mining course in the Master's in Applied Data Science Program at the University of San Diego
 Project Title: Stroke Risk Prediction
 
+### Installation
+To use this project, first clone the repo on your device using the command below
+```
+git init
+git clone https://github.com/hunterblum/Stroke-Prediction.git
+```
+
 ### Objective: 
 
-The main purpose of this project is to develop a classification machine learning model to predict stroke risk.  This is done using a data set consisting of 11 predictor variables the cover both lifestyle, age, and overall health.  Our project focused on constructing a sensitive and accurate model to identify what patients are most likely to have a stroke to capitalize on the success of early prevention techniques.  The data was collected from Kaggle.com and consisted of 12 attributes describing traditional stroke risk factors.
+The main purpose of this project is to develop a classification machine learning model to predict stroke risk.  This is done using a data set consisting of 11 predictor variables that cover lifestyle, age, and overall health.  Our project focused on constructing a sensitive and accurate model to identify what patients are most likely to have a stroke to capitalize on the success of early prevention techniques.  The data was collected from Kaggle.com and consisted of 12 attributes describing traditional stroke risk factors.
 
 ### Partners:
 * Andrew Kim
@@ -19,7 +25,7 @@ Methods Used:
 * Data Visualization
 * Programming
 * Machine Learning
-* Inferential Statisitics
+* Inferential Statistics
 
 ### Technologies:
 * R
